@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:blindtest/views/MenuView.dart';
 import 'package:blindtest/views/HomeView.dart';
 
 void main() {
@@ -24,7 +25,12 @@ class MyApp extends StatelessWidget {
           foregroundColor: Color(0xff0C173E),
         ),
       ),
-      home: const HomeView(),
+
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeView(),
+        '/menu': (context) => const MenuView(),
+      }
     );
   }
 }

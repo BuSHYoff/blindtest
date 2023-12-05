@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class HomeView extends StatefulWidget {
@@ -12,9 +11,9 @@ class HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(leading : IconButton(
-            icon: const Icon(Icons.menu, size: 60),
-            onPressed: () {},
+        appBar: AppBar(leading : const IconButton(
+            icon: Icon(Icons.menu, size: 60, color: Color(0xff0C173E)),
+            onPressed: null,
           )
         ),
         body: Center(
@@ -24,7 +23,7 @@ class HomeViewState extends State<HomeView> {
               Container(
                 margin: const EdgeInsets.only(bottom: 20),
                 child: const Text(
-                  'BLINDTEST',
+                  'BLINEST',
                   style: TextStyle(
                       fontFamily: 'LilitaOne',
                       fontSize: 60,
@@ -36,7 +35,9 @@ class HomeViewState extends State<HomeView> {
                 child: SizedBox(
                     width: 250,
                     child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/menu');
+                        },
                         style: ButtonStyle(
                           backgroundColor: MaterialStateProperty.all(
                               const Color(0xff0C173E)), // background
