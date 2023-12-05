@@ -1,6 +1,7 @@
+import 'package:blindtest/views/waiting_game_view.dart';
 import 'package:flutter/material.dart';
-import 'package:blindtest/views/MenuView.dart';
-import 'package:blindtest/views/HomeView.dart';
+import 'package:blindtest/views/menu_view.dart';
+import 'package:blindtest/views/home_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomeView(),
         '/menu': (context) => const MenuView(),
+        '/waiting_game': (context) => const WaitingGameView(),
       }
     );
   }

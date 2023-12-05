@@ -11,11 +11,13 @@ class HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(leading : const IconButton(
-            icon: Icon(Icons.menu, size: 60, color: Color(0xff0C173E)),
-            onPressed: null,
-          )
-        ),
+        appBar: AppBar(
+            leading: IconButton(
+          icon: const Icon(Icons.menu, size: 60, color: Color(0xff0C173E)),
+          onPressed: () {
+            Navigator.pushNamed(context, '/');
+          },
+        )),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -23,10 +25,10 @@ class HomeViewState extends State<HomeView> {
               Container(
                 margin: const EdgeInsets.only(bottom: 20),
                 child: const Text(
-                  'BLINEST',
+                  'BLINDTEST',
                   style: TextStyle(
                       fontFamily: 'LilitaOne',
-                      fontSize: 60,
+                      fontSize: 75,
                       color: Color(0xff33AD97)),
                 ),
               ),
