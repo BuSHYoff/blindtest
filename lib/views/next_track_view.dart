@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-class WaitingGameView extends StatefulWidget {
-  const WaitingGameView({super.key});
+class NextTrackView extends StatefulWidget {
+  const NextTrackView({super.key});
 
   @override
-  State<WaitingGameView> createState() => WaitingGameViewState();
+  State<NextTrackView> createState() => NextTrackViewState();
 }
 
-class WaitingGameViewState extends State<WaitingGameView> {
+class NextTrackViewState extends State<NextTrackView> {
   dynamic _counter = 1;
 
   // ignore: non_constant_identifier_names
@@ -45,7 +45,7 @@ class WaitingGameViewState extends State<WaitingGameView> {
               Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 child: const Text(
-                  'GAME STARTING',
+                  'NEXT MUSIC',
                   style: TextStyle(
                       fontFamily: 'LilitaOne',
                       fontSize: 50,

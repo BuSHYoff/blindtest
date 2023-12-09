@@ -1,3 +1,5 @@
+import 'package:blindtest/views/game.dart';
+import 'package:blindtest/views/next_track_view.dart';
 import 'package:blindtest/views/waiting_game_view.dart';
 import 'package:flutter/material.dart';
 import 'package:blindtest/views/menu_view.dart';
@@ -32,6 +34,8 @@ class MyApp extends StatelessWidget {
         '/': (context) => const HomeView(),
         '/menu': (context) => const MenuView(),
         '/waiting_game': (context) => const WaitingGameView(),
+        '/game': (context) => const GameView(),
+        '/next_track': (context) => const NextTrackView(),
       }
     );
   }

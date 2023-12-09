@@ -25,7 +25,7 @@ class HomeViewState extends State<HomeView> {
               Container(
                 margin: const EdgeInsets.only(bottom: 20),
                 child: const Text(
-                  'BLINDTEST',
+                  'BLINDIFY',
                   style: TextStyle(
                       fontFamily: 'LilitaOne',
                       fontSize: 75,
