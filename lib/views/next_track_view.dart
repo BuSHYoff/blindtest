@@ -37,6 +37,7 @@ class NextTrackViewState extends State<NextTrackView> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
         body: Center(
           child: Column(

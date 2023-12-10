@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+// ignore: must_be_immutable
 class GameView extends StatefulWidget {
-  const GameView({super.key});
+  GameView({super.key, required this.round});
+
+  late int round;
 
   @override
   State<GameView> createState() => GameViewState();
@@ -20,16 +24,18 @@ class GameViewState extends State<GameView> {
   //       accessToken: token);
   // }
 
+  String token = 'your-token-here';
+  
+    
   Future<void> play() async {
     final response = await http.put(
       Uri.parse('https://api.spotify.com/v1/me/player/play'),
       headers: <String, String>{
         'Content-Type': 'application/json',
-        'Authorization':
-            'Bearer ...',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(<String, dynamic>{
-        "context_uri": "spotify:playlist:0vKSE9DIM3OLlgLeDoaFEm",
+        "context_uri": "spotify:playlist:1vIrwZ44jsJP5XFrVksnLr",
         "offset": {"position": "0"},
         "position_ms": "0"
       }),
@@ -41,8 +47,7 @@ class GameViewState extends State<GameView> {
     final response = await http.get(
         Uri.parse('https://api.spotify.com/v1/me/player/currently-playing'),
         headers: <String, String>{
-          'Authorization':
-              'Bearer ...',
+          'Authorization': 'Bearer $token',
         });
 
     List<dynamic> track = [];
@@ -53,9 +58,35 @@ class GameViewState extends State<GameView> {
     return track;
   }
 
+  Future<void> next() async {
+    await http.post(Uri.parse('https://api.spotify.com/v1/me/player/next'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        });
+  }
+
+  Future<void> pause() async {
+    await http.put(Uri.parse('https://api.spotify.com/v1/me/player/pause'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        });
+  }
+
+  Future<void> toggleShuffle() async {
+    await http.put(Uri.parse('https://api.spotify.com/v1/me/player/shuffle'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(<String, bool>{"state": true}));
+  }
+
   Future<bool> compareValues(String title, String artist) async {
     List<dynamic> track = await getCurrentTrack();
-    if (track[0] == title && track[1] == artist) {
+    if (track[0].toLowerCase() == title.toLowerCase() &&
+        track[1].toLowerCase() == artist.toLowerCase()) {
       return true;
     } else {
       return false;
@@ -84,19 +115,53 @@ class GameViewState extends State<GameView> {
   //   throw Exception('Access Token Error');
   // }
 
-  @override
-  void initState() {
-    super.initState();
-    play();
-  }
-
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _artistController = TextEditingController();
 
+  dynamic _counter = 30;
+  String _footerLabel = 'BLIND IT !';
+  int maxRound = 5;
+
+  isGameDone() {
+    return widget.round >= maxRound;
+  }
+
+  // time remaining
+  _timeRemaining() {
+    Timer(const Duration(milliseconds: 1000), () {
+      setState(() {
+        _counter -= 1;
+        if (_counter > 0) {
+          _timeRemaining();
+        } else {
+          _counter = 'DONE';
+          _footerLabel = 'NEXT MUSIC';
+        }
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print(widget.round);
+    toggleShuffle();
+
+    if (widget.round > 1 && widget.round <= 5) {
+      next();
+    } else {
+      play();
+    }
+    _timeRemaining();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // final args = ModalRoute.of(context)!.settings.arguments;
+    // print(args);
+
     return Scaffold(
         appBar: AppBar(
             leading: IconButton(
@@ -111,15 +176,21 @@ class GameViewState extends State<GameView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Container(
-                      width: 325,
-                      alignment: Alignment.center,
-                      child: SizedBox(
-                          child: Image.asset(
-                        'assets/images/sound.gif',
-                      ))),
+                  Center(
+                      child:
+                          // Container(
+                          //     width: 325,
+                          //     alignment: Alignment.center,
+                          //     child: SizedBox(
+                          //         child: Image.asset(
+                          //       'assets/images/sound.gif',
+                          //     ))),
+                          Text(
+                    _counter.toString(),
+                    style: const TextStyle(fontSize: 60),
+                  )),
                   Padding(
-                      padding: const EdgeInsets.only(bottom: 75),
+                      padding: const EdgeInsets.only(bottom: 30, top: 40),
                       child: SizedBox(
                         width: 375,
                         height: 15,
@@ -135,94 +206,90 @@ class GameViewState extends State<GameView> {
                     margin: const EdgeInsets.only(bottom: 10),
                     child: const Text(
                       'TITLE',
-                      style: TextStyle(
-                          fontFamily: 'LilitaOne',
-                          fontSize: 55,
-                          color: Color(0xff0C173E)),
+                      style: TextStyle(fontSize: 55, color: Color(0xff0C173E)),
                     ),
-                  ),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter the title of the song',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Enter a title';
-                      }
-                      return null;
-                    },
                   ),
                   Container(
-                    margin: const EdgeInsets.only(bottom: 10),
+                    margin: const EdgeInsets.all(20),
+                    child: TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        filled: true,
+                        border: OutlineInputBorder(),
+                        fillColor: Color(0xff33AD97),
+                        hintText: 'Enter the title of the song',
+                        labelStyle: TextStyle(color: Colors.white),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                        contentPadding: EdgeInsets.all(20),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10, top: 10),
                     child: const Text(
                       'ARTIST',
-                      style: TextStyle(
-                          fontFamily: 'LilitaOne',
-                          fontSize: 55,
-                          color: Color(0xff0C173E)),
+                      style: TextStyle(fontSize: 55, color: Color(0xff0C173E)),
                     ),
                   ),
-                  TextFormField(
-                    controller: _artistController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'Enter the artist of the song',
+                  Container(
+                    margin: const EdgeInsets.all(20),
+                    child: TextFormField(
+                      controller: _artistController,
+
+                      decoration: const InputDecoration(
+                        filled: true,
+                        border: OutlineInputBorder(),
+                        fillColor: Color(0xff33AD97),
+                        hintText: 'Enter the artist of the song',
+                        labelStyle: TextStyle(color: Colors.white),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                        contentPadding: EdgeInsets.all(20),
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Enter an artist';
-                      }
-                      return null;
-                    },
                   ),
-                  // Align(
-                  //     alignment: Alignment.bottomCenter,
-                  //     child: Padding(
-                  //         padding: const EdgeInsets.only(top: 75),
-                  //         child: Container(
-                  //             width: 500,
-                  //             height: 62.9,
-                  //             color: const Color(0xff0C173E)))),
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: play,
-                          child: const Text('PLAY TRACK'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
-                              String title = _titleController.text;
-                              String artist = _artistController.text;
-
-                              bool valuesMatch = await compareValues(title, artist);
-
-                              if (valuesMatch) {
-                                // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('VICTORY !!!')),
-                                );
-                              } else {
-                                // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('RETRY :(')),
-                                );
-                              }
-                              // ignore: use_build_context_synchronously
-                              Navigator.pushNamed(context, '/next_track');
-                            }
-                          },
-                          child: const Text('Submit'),
-                        ),
-                        TextButton(
-                          onPressed: getCurrentTrack,
-                          child: const Text('GET TRACK'),
-                        ),
-                      ])
+                  // Center(
+                  //   child:
+                  // )
                 ],
+              ),
+            )),
+        bottomNavigationBar: Container(
+            height: 100,
+            color: const Color(0xff0C173E),
+            child: Center(
+              child: InkWell(
+                onTap: () async {
+                  if (_formKey.currentState!.validate()) {
+                    String title = _titleController.text;
+                    String artist = _artistController.text;
+
+                    bool valuesMatch = await compareValues(title, artist);
+
+                    if (valuesMatch) {
+                      // ignore: use_build_context_synchronously
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('VICTORY !!!')),
+                      );
+
+                      if (isGameDone()) {
+                        // ignore: use_build_context_synchronously
+                        pause();
+                        // ignore: use_build_context_synchronously
+                        Navigator.pushNamed(context, '/game_over');
+                      } else {
+                        // ignore: use_build_context_synchronously
+                        Navigator.pushNamed(context, '/next_track');
+                      }
+                    } else {
+                      // ignore: use_build_context_synchronously
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('RETRY :(')),
+                      );
+                    }
+                  }
+                },
+                child: Text(_footerLabel,
+                    style: const TextStyle(color: Colors.white, fontSize: 60)),
               ),
             )));
   }
