@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -25,9 +26,28 @@ class GameViewState extends State<GameView> {
   // }
 
   String token = 'your-token-here';
-  
-    
+  String playlistID = '1vIrwZ44jsJP5XFrVksnLr';
+
+  Future<int> nbTracks() async {
+    final response = await http.get(
+        Uri.parse('https://api.spotify.com/v1/playlists/$playlistID'),
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+        });
+
+    int track = jsonDecode(response.body)['tracks']['total'];
+    return track;
+  }
+
+  Future<int> randomTrackID() async {
+    int totalNbTracks = await nbTracks();
+    int randomTrackID = Random().nextInt(totalNbTracks - 1);
+    return randomTrackID;
+  }
+
   Future<void> play() async {
+    int offsetPosition = await randomTrackID();
+
     final response = await http.put(
       Uri.parse('https://api.spotify.com/v1/me/player/play'),
       headers: <String, String>{
@@ -35,8 +55,8 @@ class GameViewState extends State<GameView> {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(<String, dynamic>{
-        "context_uri": "spotify:playlist:1vIrwZ44jsJP5XFrVksnLr",
-        "offset": {"position": "0"},
+        "context_uri": "spotify:playlist:$playlistID",
+        "offset": {"position": "$offsetPosition"},
         "position_ms": "0"
       }),
     );
@@ -52,8 +72,8 @@ class GameViewState extends State<GameView> {
 
     List<dynamic> track = [];
     track.add(jsonDecode(response.body)['item']['name']); // titre
-    track.add(
-        jsonDecode(response.body)['item']['artists'][0]['name']); // artiste
+    track.add(jsonDecode(response.body)['item']['artists'][0]['name']);
+    track.add(jsonDecode(response.body)['item']['album']['images'][1]['url']);
 
     return track;
   }
@@ -124,20 +144,38 @@ class GameViewState extends State<GameView> {
   String _footerLabel = 'BLIND IT !';
   int maxRound = 5;
 
+  bool isTimerDone = false;
+
+  Image? _image;
+  String _title = '';
+  String _artist = '';
+
   isGameDone() {
     return widget.round >= maxRound;
   }
 
+  _roundOver() async {
+    List track = await getCurrentTrack();
+
+    setState(() {
+      _image = Image.network(track[2]);
+      _title = track[0];
+      _artist = track[1];
+    });
+  }
+
   // time remaining
-  _timeRemaining() {
+  _timeRemaining() async {
     Timer(const Duration(milliseconds: 1000), () {
       setState(() {
         _counter -= 1;
         if (_counter > 0) {
           _timeRemaining();
         } else {
+          isTimerDone = true;
           _counter = 'DONE';
           _footerLabel = 'NEXT MUSIC';
+          _roundOver();
         }
       });
     });
@@ -146,10 +184,10 @@ class GameViewState extends State<GameView> {
   @override
   void initState() {
     super.initState();
-    print(widget.round);
     toggleShuffle();
+    isTimerDone = false;
 
-    if (widget.round > 1 && widget.round <= 5) {
+    if (widget.round > 1 && widget.round < 5) {
       next();
     } else {
       play();
@@ -176,21 +214,40 @@ class GameViewState extends State<GameView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Center(
-                      child:
-                          // Container(
-                          //     width: 325,
-                          //     alignment: Alignment.center,
-                          //     child: SizedBox(
-                          //         child: Image.asset(
-                          //       'assets/images/sound.gif',
-                          //     ))),
-                          Text(
-                    _counter.toString(),
-                    style: const TextStyle(fontSize: 60),
-                  )),
+                  !isTimerDone
+                      ? Center(
+                          child:
+                              // Container(
+                              //     width: 325,
+                              //     alignment: Alignment.center,
+                              //     child: SizedBox(
+                              //         child: Image.asset(
+                              //       'assets/images/sound.gif',
+                              //     ))),
+                              Text(
+                          _counter.toString(),
+                          style: const TextStyle(
+                              fontSize: 60, color: Color(0xff0C173E)),
+                        ))
+                      : const Center(),
+                  _image == null
+                      ? const Text('')
+                      : Padding(
+                          padding: const EdgeInsets.only(top: 50),
+                          child:
+                              SizedBox(width: 250, height: 250, child: _image)),
+                  isTimerDone
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            '$_title - $_artist',
+                            style: const TextStyle(
+                                fontSize: 30, color: Color(0xff0C173E)),
+                          ))
+                      : const Center(),
+
                   Padding(
-                      padding: const EdgeInsets.only(bottom: 30, top: 40),
+                      padding: const EdgeInsets.only(bottom: 30, top: 30),
                       child: SizedBox(
                         width: 375,
                         height: 15,
@@ -202,51 +259,70 @@ class GameViewState extends State<GameView> {
                           ),
                         ),
                       )),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: const Text(
-                      'TITLE',
-                      style: TextStyle(fontSize: 55, color: Color(0xff0C173E)),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.all(20),
-                    child: TextFormField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        border: OutlineInputBorder(),
-                        fillColor: Color(0xff33AD97),
-                        hintText: 'Enter the title of the song',
-                        labelStyle: TextStyle(color: Colors.white),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                        contentPadding: EdgeInsets.all(20),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10, top: 10),
-                    child: const Text(
-                      'ARTIST',
-                      style: TextStyle(fontSize: 55, color: Color(0xff0C173E)),
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.all(20),
-                    child: TextFormField(
-                      controller: _artistController,
 
-                      decoration: const InputDecoration(
-                        filled: true,
-                        border: OutlineInputBorder(),
-                        fillColor: Color(0xff33AD97),
-                        hintText: 'Enter the artist of the song',
-                        labelStyle: TextStyle(color: Colors.white),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                        contentPadding: EdgeInsets.all(20),
-                      ),
-                    ),
-                  ),
+                  !isTimerDone
+                      ? Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: const Text(
+                            'TITLE',
+                            style: TextStyle(
+                                fontSize: 55, color: Color(0xff0C173E)),
+                          ),
+                        )
+                      : Container(),
+                  !isTimerDone
+                      ? Container(
+                          margin: const EdgeInsets.all(20),
+                          child: TextFormField(
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              filled: true,
+                              border: OutlineInputBorder(),
+                              fillColor: Color(0xff33AD97),
+                              hintText: 'Enter the title of the song',
+                              labelStyle: TextStyle(color: Colors.white),
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.never,
+                              contentPadding: EdgeInsets.all(20),
+                            ),
+                          ),
+                        )
+                      : Container(),
+                  !isTimerDone
+                      ? Container(
+                          margin: const EdgeInsets.only(bottom: 10, top: 10),
+                          child: const Text(
+                            'ARTIST',
+                            style: TextStyle(
+                                fontSize: 55, color: Color(0xff0C173E)),
+                          ),
+                        )
+                      : Container(),
+                  !isTimerDone
+                      ? Container(
+                          margin: const EdgeInsets.all(20),
+                          child: TextFormField(
+                            controller: _artistController,
+                            decoration: const InputDecoration(
+                              filled: true,
+                              border: OutlineInputBorder(),
+                              fillColor: Color(0xff33AD97),
+                              hintText: 'Enter the artist of the song',
+                              labelStyle: TextStyle(color: Colors.white),
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.never,
+                              contentPadding: EdgeInsets.all(20),
+                            ),
+                          ),
+                        )
+                      : Container(),
+                  isTimerDone
+                      ? Image.asset(
+                          'assets/images/lose.png',
+                          width: 200,
+                          height: 200,
+                        )
+                      : Container()
                   // Center(
                   //   child:
                   // )
@@ -281,10 +357,15 @@ class GameViewState extends State<GameView> {
                         Navigator.pushNamed(context, '/next_track');
                       }
                     } else {
-                      // ignore: use_build_context_synchronously
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('RETRY :(')),
-                      );
+                      if (!isTimerDone) {
+                        // ignore: use_build_context_synchronously
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('RETRY :(')),
+                        );
+                      } else {
+                        // ignore: use_build_context_synchronously
+                        Navigator.pushNamed(context, '/next_track');
+                      }
                     }
                   }
                 },
